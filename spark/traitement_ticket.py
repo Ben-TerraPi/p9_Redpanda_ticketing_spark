@@ -44,18 +44,19 @@ def write_batch(df, epoch_id):
 
     # tickets par type_demande et priorité
     df.groupBy("type_demande", "priorite").count() \
-      .coalesce(1).write.mode("overwrite").json("/tmp/output/agg_type_priorite")
+      .coalesce(1).write.mode("overwrite").json("/opt/spark/work/output/agg_type_priorite")
 
     # tickets par équipe
     df.groupBy("equipe").count() \
-      .coalesce(1).write.mode("overwrite").json("/tmp/output/agg_equipe")
+      .coalesce(1).write.mode("overwrite").json("/opt/spark/work/output/agg_equipe")
 
     df.unpersist() # enlève le cache
+    
 
 query = tickets_stream.writeStream \
     .outputMode("append") \
     .foreachBatch(write_batch) \
-    .trigger(processingTime="10 seconds") \
+    .trigger(once=True) \
     .start()
 
 query.awaitTermination() # à couper manuellemtn
