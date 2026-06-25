@@ -1,13 +1,15 @@
 name: redpanda-quickstart-one-broker
+
 networks:
   redpanda_network:
     driver: bridge
+
 volumes:
   redpanda-0: null
 
 services:
   redpanda-0:
-    build: ./redpanda
+    image: docker.redpanda.com/redpandadata/redpanda:v26.1.9
     command:
       - redpanda
       - start
@@ -31,6 +33,11 @@ services:
       - 18082:18082
       - 19092:19092
       - 19644:9644
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   console:
     container_name: redpanda-console
@@ -54,7 +61,8 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - redpanda-0
+      redpanda-0:
+        condition: service_healthy
 
   producer:
     build: ./producer
@@ -62,22 +70,20 @@ services:
     networks:
       - redpanda_network
     depends_on:
-      - redpanda-0
+      redpanda-0:
+        condition: service_healthy
 
   spark-master:
     build: ./spark
     container_name: spark-master
-    environment:
-      - SPARK_MODE=master
     networks:
       - redpanda_network
     ports:
       - "8081:4040"
       - "7077:7077"
-    entrypoint: /opt/spark/bin/spark-class
-    command: org.apache.spark.deploy.master.Master
     depends_on:
-      - producer
+      producer:
+        condition: service_completed_successfully
     volumes:
       - ./output:/opt/spark/work/output
 
