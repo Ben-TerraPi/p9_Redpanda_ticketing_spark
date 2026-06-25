@@ -58,4 +58,4 @@ query = tickets_stream.writeStream \
     .trigger(processingTime="10 seconds") \
     .start()
 
-query.awaitTermination()
+query.awaitTermination() # à couper manuellemtn
