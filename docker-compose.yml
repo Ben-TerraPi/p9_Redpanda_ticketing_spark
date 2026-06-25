@@ -4,8 +4,10 @@ networks:
     driver: bridge
 volumes:
   redpanda-0: null
+
 services:
   redpanda-0:
+    build: ./redpanda
     command:
       - redpanda
       - start
@@ -19,7 +21,6 @@ services:
       - --mode dev-container
       - --smp 1
       - --default-log-level=info
-    image: docker.redpanda.com/redpandadata/redpanda:v26.1.9
     container_name: redpanda-0
     volumes:
       - redpanda-0:/var/lib/redpanda/data
@@ -55,8 +56,16 @@ services:
     depends_on:
       - redpanda-0
 
+  producer:
+    build: ./producer
+    container_name: producer
+    networks:
+      - redpanda_network
+    depends_on:
+      - redpanda-0
+
   spark-master:
-    image: apache/spark:3.5.0
+    build: ./spark
     container_name: spark-master
     environment:
       - SPARK_MODE=master
@@ -68,10 +77,12 @@ services:
     entrypoint: /opt/spark/bin/spark-class
     command: org.apache.spark.deploy.master.Master
     depends_on:
-      - redpanda-0
+      - producer
+    volumes:
+      - ./output:/opt/spark/work/output
 
   spark-worker:
-    image: apache/spark:3.5.0
+    build: ./spark
     container_name: spark-worker
     environment:
       - SPARK_MASTER_URL=spark://spark-master:7077
@@ -81,3 +92,5 @@ services:
     command: org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
+    volumes:
+      - ./output:/opt/spark/work/output
