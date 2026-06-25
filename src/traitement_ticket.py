@@ -36,13 +36,24 @@ tickets = tickets.withColumn(
     .when(col("priorite") == "low", "support_backlog")
 )
 
-aggregation = tickets.groupBy("type_demande", "priorite").count()
+# Plus d'agrégation ici
+tickets_stream = tickets  # ← on passe les tickets bruts au writeStream
 
 def write_batch(df, epoch_id):
-    df.write.mode("overwrite").json("/tmp/output/tickets_aggregation")
+    df.cache()  # pour ne pas relire les données depuis redpanda
 
-query = aggregation.writeStream \
-    .outputMode("complete") \
+    # tickets par type_demande et priorité
+    df.groupBy("type_demande", "priorite").count() \
+      .coalesce(1).write.mode("overwrite").json("/tmp/output/agg_type_priorite")
+
+    # tickets par équipe
+    df.groupBy("equipe").count() \
+      .coalesce(1).write.mode("overwrite").json("/tmp/output/agg_equipe")
+
+    df.unpersist() # enlève le cache
+
+query = tickets_stream.writeStream \
+    .outputMode("append") \
     .foreachBatch(write_batch) \
     .trigger(processingTime="10 seconds") \
     .start()
