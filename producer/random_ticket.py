@@ -32,8 +32,8 @@ def gen_ticket():
     "priorite": priorite
 }
 
-producer = KafkaProducer(
-    bootstrap_servers="localhost:19092",
+producer = KafkaProducer( 
+    bootstrap_servers="redpanda-0:9092", # adresse interne Docker
     value_serializer=lambda v: json.dumps(v).encode("utf-8")
 )
 
