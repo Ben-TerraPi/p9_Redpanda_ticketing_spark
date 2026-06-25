@@ -6,7 +6,7 @@ Titre du projet :
 
 `Gérez des tickets clients avec Redpanda et PySpark`
 
-Ce projet consiste à mettre en place un pipeline de données pour ingérer, traiter et analyser ces tickets en temps réel en utilisant Redpanda et Pyspasrk.
+Ce projet consiste à mettre en place un pipeline de données pour ingérer, traiter et analyser des tickets en temps réel en utilisant Redpanda et Pyspasrk.
 
 Le but de cet exercice est de simuler l’utilisation de Redpanda dans un conteneur Docker, voici ce qui a été réalisé en local:
 - 1 broker Redpanda en mode dev-container (pas de réplication, pas de tolérance aux pannes)
