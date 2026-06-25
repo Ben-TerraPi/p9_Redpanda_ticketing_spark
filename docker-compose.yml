@@ -73,30 +73,13 @@ services:
       redpanda-0:
         condition: service_healthy
 
-  spark-master:
+  spark:
     build: ./spark
-    container_name: spark-master
+    container_name: spark
     networks:
       - redpanda_network
-    ports:
-      - "8081:4040"
-      - "7077:7077"
     depends_on:
       producer:
         condition: service_completed_successfully
-    volumes:
-      - ./output:/opt/spark/work/output
-
-  spark-worker:
-    build: ./spark
-    container_name: spark-worker
-    environment:
-      - SPARK_MASTER_URL=spark://spark-master:7077
-    networks:
-      - redpanda_network
-    entrypoint: /opt/spark/bin/spark-class
-    command: org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    depends_on:
-      - spark-master
     volumes:
       - ./output:/opt/spark/work/output
