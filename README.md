@@ -13,6 +13,8 @@ Le but de cet exercice est de simuler l’utilisation de Redpanda dans un conten
 - Producer qui génère des données aléatoires en une seule fois
 - Spark dans le même conteneur
 
+![Pipeline](image/pipeline)
+
 
 ## Installations
 
