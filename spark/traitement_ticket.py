@@ -1,6 +1,9 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, when
 from pyspark.sql.types import StructType, StructField, StringType
+import psycopg2
+import subprocess
+import sys
 
 schema = StructType([
     StructField("id_ticket", StringType()),
@@ -31,6 +34,7 @@ raw = spark.readStream \
 tickets = raw.select(from_json(col("value").cast("string"), schema).alias("data")) \
              .select("data.*")
 
+# Création de nouvelles colonnes
 tickets = tickets.withColumn(
     "equipe",
     when(col("priorite") == "high", "gestion_crise")
@@ -38,24 +42,72 @@ tickets = tickets.withColumn(
     .when(col("priorite") == "low", "support_backlog")
 )
 
-# Plus d'agrégation ici
-tickets_stream = tickets  # ← on passe les tickets bruts au writeStream
+# postgres
+POSTGRES_CONFIG = {
+    "host": "postgres",
+    "port": 5432,
+    "dbname": "tickets_db",
+    "user": "root",
+    "password": "root",
+}
 
+def ensure_tables():
+    connection = psycopg2.connect(**POSTGRES_CONFIG)
+    connection.autocommit = True
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS agg_equipe (
+            equipe TEXT PRIMARY KEY,
+            count BIGINT NOT NULL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS agg_type_priorite (
+            type_demande TEXT NOT NULL,
+            priorite TEXT NOT NULL,
+            count BIGINT NOT NULL,
+            PRIMARY KEY (type_demande, priorite)
+        )
+    """)
+
+    cursor.close()
+    connection.close()
+
+ensure_tables()
+
+
+# agrégation et écriture dbb
 def write_batch(df, epoch_id):
-    df.cache()  # pour ne pas relire les données depuis redpanda
+    equipe_counts = df.groupBy("equipe").count().collect()
+    type_priorite_counts = df.groupBy("type_demande", "priorite").count().collect()
 
-    # tickets par type_demande et priorité
-    df.groupBy("type_demande", "priorite").count() \
-      .coalesce(1).write.mode("overwrite").json("/opt/spark/work/output/agg_type_priorite")
+    connection = psycopg2.connect(**POSTGRES_CONFIG)
+    cursor = connection.cursor()
 
-    # tickets par équipe
-    df.groupBy("equipe").count() \
-      .coalesce(1).write.mode("overwrite").json("/opt/spark/work/output/agg_equipe")
+    for row in equipe_counts:
+        cursor.execute("""
+            INSERT INTO agg_equipe (equipe, count)
+            VALUES (%s, %s)
+            ON CONFLICT (equipe)
+            DO UPDATE SET count = agg_equipe.count + EXCLUDED.count
+        """, (row["equipe"], row["count"]))
 
-    df.unpersist() # enlève le cache
+    for row in type_priorite_counts:
+        cursor.execute("""
+            INSERT INTO agg_type_priorite (type_demande, priorite, count)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (type_demande, priorite)
+            DO UPDATE SET count = agg_type_priorite.count + EXCLUDED.count
+        """, (row["type_demande"], row["priorite"], row["count"]))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
     
 
-query = tickets_stream.writeStream \
+query = tickets.writeStream \
     .outputMode("append") \
     .foreachBatch(write_batch) \
     .option("checkpointLocation", "/opt/spark/work/output/checkpoints/ticket_aggregation") \
@@ -63,4 +115,10 @@ query = tickets_stream.writeStream \
     .start()
 # trigger périodique avec checkpoint
 
-query.awaitTermination() # à couper manuellemtn
+try:
+    query.awaitTermination() # à couper manuellemtn
+finally:
+    subprocess.run(
+        [sys.executable, "/opt/spark/work/export_final_json.py"],
+        check=True
+    )

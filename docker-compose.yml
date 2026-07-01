@@ -1,4 +1,4 @@
-name: redpanda-quickstart-one-broker
+name: p9_Redpanda_ticketing_spark
 
 networks:
   redpanda_network:
@@ -35,6 +35,22 @@ services:
       - 19644:9644
     healthcheck:
       test: ["CMD", "rpk", "cluster", "info"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    networks:
+      - redpanda_network
+    environment:
+      POSTGRES_DB: tickets_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d tickets_db"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -81,6 +97,8 @@ services:
     depends_on:
       redpanda-0:
         condition: service_healthy # pour que Spark démarre en même temps que le producer
+      postgres:
+        condition: service_healthy   
     volumes:
       - ./output:/opt/spark/work/output
     ports:

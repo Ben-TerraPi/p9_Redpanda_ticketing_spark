@@ -42,8 +42,7 @@ producer = KafkaProducer(
 for i in range(1, 501):
     ticket = gen_ticket(i)
     producer.send("client_tickets", value=ticket) # envoi asynchrone, non bloquant dans la plupart des cas
-    print(f"ticket {i} envoyé")
-    time.sleep(0.5)
+    time.sleep(0.5) # sleep entre ticket envoyé
 
 producer.flush() # blocage final pour garantir que tout est bien parti
 producer.close()
