@@ -80,6 +80,8 @@ services:
       - redpanda_network
     depends_on:
       producer:
-        condition: service_completed_successfully
+        condition: service_healthy # pour que Spark démarre en même temps que le producer
     volumes:
       - ./output:/opt/spark/work/output
+    ports:
+      - 4040:4040

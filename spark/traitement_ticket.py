@@ -26,6 +26,8 @@ raw = spark.readStream \
     .option("startingOffsets", "earliest") \
     .load()
 
+#  .option("startingOffsets", "earliest") sert au tout premier démarrage seulement
+
 tickets = raw.select(from_json(col("value").cast("string"), schema).alias("data")) \
              .select("data.*")
 
@@ -56,7 +58,9 @@ def write_batch(df, epoch_id):
 query = tickets_stream.writeStream \
     .outputMode("append") \
     .foreachBatch(write_batch) \
-    .trigger(once=True) \
+    .option("checkpointLocation", "/opt/spark/work/output/checkpoints/ticket_aggregation") \
+    .trigger(processingTime="5 seconds") \
     .start()
+# trigger périodique avec checkpoint
 
 query.awaitTermination() # à couper manuellemtn
