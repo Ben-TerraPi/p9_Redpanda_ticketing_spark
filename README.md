@@ -64,3 +64,18 @@ Le traitement Spark conserve un checkpoint dans `./output/checkpoints/ticket_agg
 - si Spark est arrêté proprement, il reprend au bon endroit au redémarrage
 - si l’arrêt arrive pendant un micro-batch, le dernier batch peut éventuellement être rejoué
 - si le checkpoint est supprimé, Spark repart du début du topic
+
+## Commandes utiles
+
+**Docker**
+- docker compose down -v (supprime les conteneurs et les volumes associés)
+- docker compose up (voir le démarrage et le debug en direct)
+- docker compose up -d (lancer l’environnement puis continuer à travailler)
+
+**Spark**
+- Remove-Item -Recurse -Force .\output\checkpoints\ticket_aggregation (enlever les sauvegardes checkpoint)
+- docker compose logs -f spark (logs spark)
+
+Télécharger manuellement les json une fois l'envoie des tickets terminés:
+docker compose stop spark
+docker compose run --rm spark python3 /opt/spark/work/export_final_json.py
