@@ -1,0 +1,32 @@
+[
+  {
+    "type_demande": "commerciale",
+    "priorite": "high",
+    "count": 89
+  },
+  {
+    "type_demande": "commerciale",
+    "priorite": "low",
+    "count": 84
+  },
+  {
+    "type_demande": "commerciale",
+    "priorite": "medium",
+    "count": 71
+  },
+  {
+    "type_demande": "SAV",
+    "priorite": "high",
+    "count": 70
+  },
+  {
+    "type_demande": "SAV",
+    "priorite": "low",
+    "count": 105
+  },
+  {
+    "type_demande": "SAV",
+    "priorite": "medium",
+    "count": 81
+  }
+]
