@@ -114,6 +114,7 @@ query = tickets.writeStream \
     .trigger(processingTime="5 seconds") \
     .start()
 # trigger périodique avec checkpoint
+# checkpoint mémorise le dernier offset validé
 
 try:
     query.awaitTermination() # à couper manuellemtn

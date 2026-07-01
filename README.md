@@ -55,3 +55,12 @@ Une fois le streaming terminé, `export_final_json.py` lit PostgreSQL et génèr
 Résultats finaux :
 - `./output/final_agg_equipe.json`
 - `./output/final_agg_type_priorite.json`
+
+
+## Reprise et arrêt
+
+Le traitement Spark conserve un checkpoint dans `./output/checkpoints/ticket_aggregation`.
+
+- si Spark est arrêté proprement, il reprend au bon endroit au redémarrage
+- si l’arrêt arrive pendant un micro-batch, le dernier batch peut éventuellement être rejoué
+- si le checkpoint est supprimé, Spark repart du début du topic
