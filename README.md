@@ -17,6 +17,8 @@ Le but de cet exercice est de simuler l’utilisation de Redpanda dans un conten
 
 ![Pipeline](image/pipeline.png)
 
+[![](https://www.loom.com/share/76a71580c8654a5bbcee8b6862b7ed29)
+
 
 ## Installations
 
