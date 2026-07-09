@@ -13,7 +13,7 @@ Le but de cet exercice est de simuler l’utilisation de Redpanda dans un conten
 - Producer qui génère des tickets progressivement
 - Spark en streaming
 - PostgreSQL pour stocker les agrégations cumulatives
-- Export final en JSON depuis PostgreSQL
+- Export final en JSON 
 
 ![Pipeline](image/pipeline.png)
 
